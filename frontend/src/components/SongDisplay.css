@@ -1,0 +1,155 @@
+.song-display {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.song-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.song-header h2 {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+}
+
+.song-summary {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.song-actions {
+  display: flex;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+.btn-play,
+.btn-delete {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.btn-play {
+  background: linear-gradient(135deg, var(--success), #2db8a3);
+  color: white;
+}
+
+.btn-play:hover {
+  box-shadow: 0 4px 12px rgba(86, 228, 194, 0.3);
+}
+
+.btn-delete {
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff9999;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.btn-delete:hover {
+  background: rgba(255, 107, 107, 0.2);
+}
+
+.song-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 24px;
+  padding-top: 12px;
+}
+
+.badge {
+  background: rgba(138, 105, 255, 0.1);
+  border: 1px solid rgba(138, 105, 255, 0.2);
+  color: #d8d1ff;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.song-content {
+  padding: 24px;
+}
+
+.song-section {
+  margin-bottom: 24px;
+}
+
+.song-section:last-child {
+  margin-bottom: 0;
+}
+
+.song-section h3 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lyrics {
+  color: var(--text-primary);
+  line-height: 1.8;
+}
+
+.lyrics p {
+  margin: 8px 0;
+}
+
+.lyrics.chorus {
+  font-style: italic;
+  font-weight: 500;
+  color: #d8d1ff;
+}
+
+.chords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chord-badge {
+  background: rgba(86, 228, 194, 0.1);
+  border: 1px solid rgba(86, 228, 194, 0.3);
+  color: #b7ffef;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.song-footer {
+  padding: 12px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .song-header {
+    flex-direction: column;
+  }
+
+  .song-actions {
+    width: 100%;
+  }
+
+  .btn-play,
+  .btn-delete {
+    flex: 1;
+  }
+
+  .song-content {
+    padding: 16px;
+  }
+}

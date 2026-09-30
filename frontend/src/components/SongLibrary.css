@@ -1,0 +1,123 @@
+.song-library h2 {
+  font-size: 1.6rem;
+  margin-bottom: 24px;
+}
+
+.song-library.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.empty-state {
+  text-align: center;
+}
+
+.empty-state h3 {
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+}
+
+.songs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.song-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.song-card:hover {
+  border-color: var(--primary);
+  background: rgba(138, 105, 255, 0.05);
+  transform: translateY(-4px);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.card-header h3 {
+  font-size: 1.1rem;
+  margin: 0;
+  flex: 1;
+}
+
+.btn-delete-small {
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-delete-small:hover {
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff9999;
+}
+
+.card-summary {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.card-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.card-meta span {
+  background: rgba(138, 105, 255, 0.1);
+  border: 1px solid rgba(138, 105, 255, 0.2);
+  color: #d8d1ff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.btn-load {
+  width: 100%;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.btn-load:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(138, 105, 255, 0.3);
+}
+
+@media (max-width: 640px) {
+  .songs-grid {
+    grid-template-columns: 1fr;
+  }
+}
