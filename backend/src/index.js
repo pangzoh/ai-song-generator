@@ -12,51 +12,77 @@ const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
 
 // Middleware
 app.use(cors({ origin: corsOrigin }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// In-memory storage (replace with MongoDB in production)
+// In-memory storage
 const generatedSongs = new Map();
 
-// Types
-const moodOptions = ['Dreamy', 'Fierce', 'Nostalgic', 'Electric', 'Melancholic', 'Confident'];
-const genreOptions = ['Pop', 'Indie', 'Electronic', 'R&B', 'Rock', 'Lo-fi', 'Hip-Hop', 'Jazz'];
-const themeOptions = ['Love', 'Rebellion', 'Night drive', 'Healing', 'City lights', 'Fresh start'];
+const moodOptions = ['Dreamy', 'Fierce', 'Nostalgic', 'Electric', 'Melancholic', 'Confident', 'Energetic', 'Calm'];
+const genreOptions = ['Pop', 'Indie', 'Electronic', 'R&B', 'Rock', 'Lo-fi', 'Hip-Hop', 'Jazz', 'Soul', 'Ambient'];
+const themeOptions = ['Love', 'Rebellion', 'Night drive', 'Healing', 'City lights', 'Fresh start', 'Adventure', 'Nostalgia'];
 
-// Helper: Generate song with AI
-async function generateSongWithAI(params) {
+// Generate lyrics with streaming support
+async function generateLyrics(params) {
   const {
     mood = 'Dreamy',
     genre = 'Pop',
     theme = 'Love',
     tempo = 96,
-    description = 'A beautiful original song',
+    description = 'A beautiful song',
+    style = 'poetic', // poetic, storytelling, conversational
   } = params;
 
-  const systemPrompt = `You are a talented songwriter and music producer. Generate an original song with:
-- Mood: ${mood}
-- Genre: ${genre}
-- Theme: ${theme}
-- Tempo: ${tempo} BPM
-- User description: ${description}
+  const styleGuide = {
+    poetic: 'Use metaphors, imagery, and lyrical language. Make it artistic and expressive.',
+    storytelling: 'Tell a narrative story. Create a clear beginning, middle, and end.',
+    conversational: 'Use natural, relatable language. Write like you\'re speaking to someone.',
+  };
 
-Respond with a JSON object containing:
+  const systemPrompt = `You are an expert lyricist and songwriter. Generate original lyrics for a ${mood.toLowerCase()} ${genre.toLowerCase()} song about ${theme.toLowerCase()}.
+
+Style: ${styleGuide[style] || styleGuide.poetic}
+
+User description: ${description}
+
+Respond ONLY with valid JSON (no markdown, no code blocks). Use this exact structure:
 {
-  "title": "Song Title",
-  "verse": ["line 1", "line 2", "line 3", "line 4"],
-  "chorus": "full chorus text",
-  "bridge": "bridge lyrics",
-  "chordProgression": ["Cmaj7", "G", ...],
-  "key": "C Major",
-  "summary": "brief description",
-  "structure": "Verse-Chorus-Verse-Chorus-Bridge-Chorus"
-}
-
-Make the lyrics original, creative, and emotionally resonant. Chord progressions should match the mood and genre.`;
+  "title": "Song Title Here",
+  "tagline": "One-line catchy description",
+  "structure": "Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Bridge - Chorus - Outro",
+  "verse1": {
+    "lyrics": "Line 1\nLine 2\nLine 3\nLine 4",
+    "mood": "The emotional tone"
+  },
+  "preChorus": {
+    "lyrics": "Line 1\nLine 2",
+    "mood": "Building tension or connection"
+  },
+  "chorus": {
+    "lyrics": "Line 1\nLine 2\nLine 3\nLine 4",
+    "mood": "Hook and main message",
+    "hookLine": "The most catchy line"
+  },
+  "verse2": {
+    "lyrics": "Line 1\nLine 2\nLine 3\nLine 4",
+    "mood": "Development of story/emotion"
+  },
+  "bridge": {
+    "lyrics": "Line 1\nLine 2\nLine 3\nLine 4",
+    "mood": "Contrast or climax"
+  },
+  "outro": {
+    "lyrics": "Line 1\nLine 2\nLine 3\nLine 4",
+    "mood": "Resolution or fade out"
+  },
+  "chordProgression": ["Cmaj7", "G", "Am7", "Fmaj7"],
+  "keySignature": "C Major",
+  "lyricalThemes": ["theme1", "theme2", "theme3"]
+}`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -68,18 +94,19 @@ Make the lyrics original, creative, and emotionally resonant. Chord progressions
         },
         {
           role: 'user',
-          content: `Generate a ${mood.toLowerCase()} ${genre.toLowerCase()} song about ${theme.toLowerCase()}.`,
+          content: `Create a ${mood.toLowerCase()} ${genre.toLowerCase()} song for ${theme.toLowerCase()}.`,
         },
       ],
       temperature: 0.8,
-      max_tokens: 2000,
+      max_tokens: 2500,
     });
 
-    const content = response.choices[0].message.content;
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const content = response.choices[0].message.content.trim();
     
+    // Try to extract JSON
+    let jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('Failed to parse song data from AI response');
+      throw new Error('No JSON found in response');
     }
 
     const songData = JSON.parse(jsonMatch[0]);
@@ -91,11 +118,33 @@ Make the lyrics original, creative, and emotionally resonant. Chord progressions
       genre,
       theme,
       tempo,
-      createdAt: new Date().toISOString(),
+      style,
       description,
+      createdAt: new Date().toISOString(),
     };
   } catch (error) {
-    console.error('Error generating song with AI:', error);
+    console.error('Error generating lyrics:', error);
+    throw error;
+  }
+}
+
+// Convert text to speech using ElevenLabs-style endpoint (mock for now)
+async function synthesizeVoice(text, voice = 'default') {
+  // In production, integrate with:
+  // - ElevenLabs API (realistic voices)
+  // - Google Cloud Text-to-Speech
+  // - Azure Cognitive Services
+  // For now, return a mock audio URL
+  
+  try {
+    // TODO: Implement real voice synthesis
+    return {
+      audioUrl: `data:audio/mp3;base64,ID3...`, // Placeholder
+      voice,
+      duration: Math.ceil(text.length / 10), // Rough estimate
+    };
+  } catch (error) {
+    console.error('Error synthesizing voice:', error);
     throw error;
   }
 }
@@ -107,39 +156,62 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Generate a new song
-app.post('/api/songs/generate', async (req, res) => {
+// Generate lyrics
+app.post('/api/lyrics/generate', async (req, res) => {
   try {
-    const { mood, genre, theme, tempo, description } = req.body;
+    const { mood, genre, theme, tempo, description, style } = req.body;
 
-    // Validate inputs
-    if (!mood || !genreOptions.includes(genre)) {
+    if (!genre || !genreOptions.includes(genre)) {
       return res.status(400).json({
-        error: 'Invalid genre provided',
+        error: 'Invalid genre',
         validGenres: genreOptions,
       });
     }
 
-    res.setHeader('Content-Type', 'application/json');
-    res.write('{"status":"generating"\n');
-
-    const song = await generateSongWithAI({
+    const lyrics = await generateLyrics({
       mood,
       genre,
       theme,
-      tempo: parseInt(tempo) || 96,
+      tempo,
       description,
+      style,
     });
 
-    // Store the song
-    generatedSongs.set(song.id, song);
+    generatedSongs.set(lyrics.id, lyrics);
 
-    res.write(`,"song":${JSON.stringify(song)}}`);
-    res.end();
+    res.json({
+      status: 'success',
+      lyrics,
+    });
   } catch (error) {
-    console.error('Error in /api/songs/generate:', error);
+    console.error('Error in /api/lyrics/generate:', error);
     res.status(500).json({
-      error: 'Failed to generate song',
+      error: 'Failed to generate lyrics',
+      message: error.message,
+    });
+  }
+});
+
+// Synthesize voice for a section
+app.post('/api/voice/synthesize', async (req, res) => {
+  try {
+    const { text, voice = 'default', section } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    const audio = await synthesizeVoice(text, voice);
+
+    res.json({
+      status: 'success',
+      audio,
+      section,
+    });
+  } catch (error) {
+    console.error('Error in /api/voice/synthesize:', error);
+    res.status(500).json({
+      error: 'Failed to synthesize voice',
       message: error.message,
     });
   }
@@ -189,7 +261,7 @@ app.delete('/api/songs/:id', (req, res) => {
   }
 });
 
-// Error handling middleware
+// Error middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
@@ -201,5 +273,5 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(port, () => {
   console.log(`\n🎵 AI Song Generator API running on http://localhost:${port}`);
-  console.log(`   Health check: http://localhost:${port}/api/health\n`);
+  console.log(`   Docs: POST http://localhost:${port}/api/lyrics/generate\n`);
 });

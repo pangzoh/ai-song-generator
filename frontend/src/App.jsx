@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import axios from 'axios';
 import * as Tone from 'tone';
-import SongGenerator from './components/SongGenerator';
-import SongDisplay from './components/SongDisplay';
+import LyricsGenerator from './components/LyricsGenerator';
+import LyricsDisplay from './components/LyricsDisplay';
+import VoiceSynthesizer from './components/VoiceSynthesizer';
 import SongLibrary from './components/SongLibrary';
 import './App.css';
 
@@ -13,9 +14,9 @@ export default function App() {
   const [currentSong, setCurrentSong] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('generate'); // 'generate' or 'library'
+  const [activeTab, setActiveTab] = useState('generate');
+  const [playingSection, setPlayingSection] = useState(null);
 
-  // Fetch all songs on mount
   const fetchSongs = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/api/songs`);
@@ -25,22 +26,21 @@ export default function App() {
     }
   }, []);
 
-  // Generate a new song
-  const handleGenerateSong = useCallback(
+  const handleGenerateLyrics = useCallback(
     async (params) => {
       setIsGenerating(true);
       setError(null);
 
       try {
-        const response = await axios.post(`${API_URL}/api/songs/generate`, params);
-        const song = response.data.song;
+        const response = await axios.post(`${API_URL}/api/lyrics/generate`, params);
+        const song = response.data.lyrics;
         setCurrentSong(song);
         setSongs((prev) => [song, ...prev]);
-        setActiveTab('generate');
+        setActiveTab('display');
       } catch (err) {
-        console.error('Error generating song:', err);
+        console.error('Error generating lyrics:', err);
         setError(
-          err.response?.data?.message || 'Failed to generate song. Check your API key and try again.'
+          err.response?.data?.message || 'Failed to generate lyrics. Check your API key and try again.'
         );
       } finally {
         setIsGenerating(false);
@@ -49,13 +49,11 @@ export default function App() {
     []
   );
 
-  // Load a song from library
   const handleLoadSong = useCallback((song) => {
     setCurrentSong(song);
-    setActiveTab('generate');
+    setActiveTab('display');
   }, []);
 
-  // Delete a song
   const handleDeleteSong = useCallback(
     async (id) => {
       try {
@@ -72,8 +70,7 @@ export default function App() {
     [currentSong]
   );
 
-  // Play a melody using Tone.js
-  const handlePlayMelody = useCallback(async (song) => {
+  const playMelodyPreview = useCallback(async () => {
     try {
       await Tone.start();
       const now = Tone.now();
@@ -103,7 +100,7 @@ export default function App() {
       <header className="app-header">
         <div className="header-content">
           <h1>🎵 AI Song Generator</h1>
-          <p>Create original songs powered by AI</p>
+          <p>AI-Powered Lyrics & Voice Synthesis</p>
         </div>
       </header>
 
@@ -112,7 +109,21 @@ export default function App() {
           className={`tab ${activeTab === 'generate' ? 'active' : ''}`}
           onClick={() => setActiveTab('generate')}
         >
-          Generate
+          ✨ Generate
+        </button>
+        <button
+          className={`tab ${activeTab === 'display' ? 'active' : ''}`}
+          onClick={() => setActiveTab('display')}
+          disabled={!currentSong}
+        >
+          📝 Lyrics
+        </button>
+        <button
+          className={`tab ${activeTab === 'voice' ? 'active' : ''}`}
+          onClick={() => setActiveTab('voice')}
+          disabled={!currentSong}
+        >
+          🎙️ Voice
         </button>
         <button
           className={`tab ${activeTab === 'library' ? 'active' : ''}`}
@@ -121,7 +132,7 @@ export default function App() {
             fetchSongs();
           }}
         >
-          Library ({songs.length})
+          📚 Library ({songs.length})
         </button>
       </div>
 
@@ -129,31 +140,32 @@ export default function App() {
         {error && (
           <div className="error-banner">
             <p>{error}</p>
-            <button onClick={() => setError(null)}>Dismiss</button>
+            <button onClick={() => setError(null)}>✕</button>
           </div>
         )}
 
-        {activeTab === 'generate' ? (
-          <div className="generate-section">
-            <SongGenerator
-              isLoading={isGenerating}
-              onGenerate={handleGenerateSong}
-              onPlayMelody={handlePlayMelody}
-            />
-            {currentSong && (
-              <SongDisplay
-                song={currentSong}
-                onDelete={() => handleDeleteSong(currentSong.id)}
-                onPlayMelody={() => handlePlayMelody(currentSong)}
-              />
-            )}
-          </div>
-        ) : (
-          <SongLibrary
-            songs={songs}
-            onSelectSong={handleLoadSong}
-            onDeleteSong={handleDeleteSong}
+        {activeTab === 'generate' && (
+          <LyricsGenerator isLoading={isGenerating} onGenerate={handleGenerateLyrics} />
+        )}
+
+        {activeTab === 'display' && currentSong && (
+          <LyricsDisplay
+            song={currentSong}
+            onDelete={() => handleDeleteSong(currentSong.id)}
+            onPlayMelody={playMelodyPreview}
           />
+        )}
+
+        {activeTab === 'voice' && currentSong && (
+          <VoiceSynthesizer
+            song={currentSong}
+            playingSection={playingSection}
+            setPlayingSection={setPlayingSection}
+          />
+        )}
+
+        {activeTab === 'library' && (
+          <SongLibrary songs={songs} onSelectSong={handleLoadSong} onDeleteSong={handleDeleteSong} />
         )}
       </main>
     </div>
